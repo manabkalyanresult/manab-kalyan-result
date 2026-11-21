@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>মানব কল্যাণ - Result Management</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#eef3f9;color:#172b4d}
+.container{max-width:430px;margin:45px auto;padding:20px}
+.card{background:white;padding:25px;border-radius:15px;box-shadow:0 5px 22px #0001}
+h2{text-align:center;color:#0759a5}
+p{text-align:center;color:#64748b}
+.tabs{display:flex;gap:8px;margin:20px 0}
+button{cursor:pointer;border:0;border-radius:8px;padding:12px;background:#0759a5;color:white;font-size:15px}
+.tabs button{flex:1}
+.tabs button.active{background:#063b70}
+input{width:100%;padding:13px;margin:9px 0;border:1px solid #ccd5df;border-radius:8px;font-size:16px}
+.login{width:100%;margin-top:12px}
+.hidden{display:none}
+#message{color:#c62828;text-align:center;font-size:14px}
+.dashboard{text-align:center}
+.logout{background:#c62828;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="card" id="loginBox">
+<h2>মানব কল্যাণ উচ্চ বিদ্যালয় এন্ড কলেজ</h2>
+<p>অনলাইন Result Management System</p>
+<div class="tabs">
+<button id="adminTab" class="active" onclick="showLogin('admin')">Admin Login</button>
+<button id="teacherTab" onclick="showLogin('teacher')">Teacher Login</button>
+</div>
+<div id="adminForm">
+<input id="adminEmail" type="email" placeholder="Admin Email">
+<input id="adminPassword" type="password" placeholder="Password">
+<button class="login" onclick="loginAdmin()">Admin Login</button>
+</div>
+<div id="teacherForm" class="hidden">
+<input id="teacherPhone" type="tel" placeholder="মোবাইল নম্বর">
+<input id="teacherPassword" type="password" placeholder="Password">
+<button class="login" onclick="loginTeacher()">Teacher Login</button>
+</div>
+<p id="message"></p>
+</div>
+<div class="card dashboard hidden" id="dashboard">
+<h2 id="welcome"></h2>
+<p id="roleText"></p>
+<p>মানব কল্যাণ Result Management System</p>
+<button class="logout" onclick="logout()">Logout</button>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyBPl03PfD655IUAZsfcQK8kYVyv6Rb8F8Ss",
+ authDomain: "manab-kalyan-result.firebaseapp.com",
+ projectId: "manab-kalyan-result",
+ storageBucket: "manab-kalyan-result.firebasestorage.app",
+ messagingSenderId: "332532217686",
+ appId: "1:332532217686:web:1cd57f40e64cdc477088f7",
+ measurementId: "G-BL68F66CHV"
+};
+
+const ADMIN_UID = "4aK1e9SIHCdutUGRamGEbei5t6M2";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.showLogin = function(type) {
+ document.getElementById("adminForm").classList.toggle("hidden",type!=="admin");
+ document.getElementById("teacherForm").classList.toggle("hidden",type!=="teacher");
+ document.getElementById("adminTab").classList.toggle("active",type==="admin");
+ document.getElementById("teacherTab").classList.toggle("active",type==="teacher");
+ document.getElementById("message").textContent="";
+};
+
+function phoneEmail(value) {
+ let phone=value.replace(/\D/g,"");
+ if(phone.startsWith("880")) phone="0"+phone.slice(3);
+ if(!/^01[3-9]\d{8}$/.test(phone)) throw new Error("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর দিন।");
+ return phone+"@teacher.manabkalyan.invalid";
+}
+
+function showDashboard(role) {
+ document.getElementById("loginBox").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+ document.getElementById("welcome").textContent=role==="admin"?"Admin Dashboard":"Teacher Dashboard";
+ document.getElementById("roleText").textContent=role==="admin"?"আপনি Admin হিসেবে লগইন করেছেন।":"আপনি Teacher হিসেবে লগইন করেছেন।";
+}
+
+window.loginAdmin = async function() {
+ const msg=document.getElementById("message");
+ msg.textContent="লগইন হচ্ছে...";
+ try {
+  const result=await signInWithEmailAndPassword(auth,
+   document.getElementById("adminEmail").value.trim(),
+   document.getElementById("adminPassword").value);
+  if(result.user.uid!==ADMIN_UID) {
+   await signOut(auth);
+   throw new Error("এই অ্যাকাউন্টটি Admin নয়।");
+  }
+  showDashboard("admin");
+ } catch(e) { msg.textContent="লগইন ব্যর্থ: "+e.message; }
+};
+
+window.loginTeacher = async function() {
+ const msg=document.getElementById("message");
+ msg.textContent="লগইন হচ্ছে...";
+ try {
+  const email=phoneEmail(document.getElementById("teacherPhone").value);
+  const result=await signInWithEmailAndPassword(auth,email,
+   document.getElementById("teacherPassword").value);
+  const snap=await getDoc(doc(db,"users",result.user.uid));
+  if(!snap.exists() || snap.data().role!=="teacher" || snap.data().active!==true) {
+   await signOut(auth);
+   throw new Error("শিক্ষক অ্যাকাউন্ট সক্রিয় নয় অথবা অনুমোদিত নয়।");
+  }
+  showDashboard("teacher");
+ } catch(e) { msg.textContent="লগইন ব্যর্থ: "+e.message; }
+};
+
+window.logout = async function() {
+ await signOut(auth);
+ location.reload();
+};
+</script>
+</body>
+</html>
