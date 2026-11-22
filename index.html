@@ -71,16 +71,16 @@ getFirestore,doc,getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Firebase Configuration: আপনার আসল Firebase Config বসান
-const firebaseConfig = {
-apiKey: "আপনার আসল API KEY",
-authDomain: "manab-kalyan-result.firebaseapp.com",
-projectId: "manab-kalyan-result",
-storageBucket: "manab-kalyan-result.firebasestorage.app",
-messagingSenderId: "332532217686",
-appId: "আপনার আসল APP ID",
-measurementId: "আপনার আসল MEASUREMENT ID"
-};
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBPl03PfF655IUAZsfcQ8YkVyv6Rb8F8Ss",
+  authDomain: "manab-kalyan-result.firebaseapp.com",
+  projectId: "manab-kalyan-result",
+  storageBucket: "manab-kalyan-result.firebasestorage.app",
+  messagingSenderId: "332532217686",
+  appId: "1:332532217686:web:1cd57f40e64cdc477088f7",
+  measurementId: "G-BL68F66CHV"
+};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
